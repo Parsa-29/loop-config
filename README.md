@@ -54,6 +54,28 @@ Approval gate: open `codex/config.gate.toml` and **merge** the two keys into
 ### Any other tool (Copilot, Windsurf, Cline, Amp…)
 Drop `AGENTS.md` at the repo root — they read it as-is.
 
+## Skills (shared across all agents)
+
+`skills/` is the single source of truth for Agent Skills. All three tools use the same
+open `SKILL.md` format (frontmatter + `references/` + `scripts/`), so each tool's skills
+dir just **symlinks** to here:
+- `~/.claude/skills/<name>` → `~/loop-config/skills/<name>`
+- `~/.codex/skills/<name>`  → `~/loop-config/skills/<name>`
+- `~/.cursor/skills/<name>` → `~/loop-config/skills/<name>`
+
+Add/edit a skill once here → every agent sees it. Tool-built-in skills are left alone
+(`~/.codex/skills/codex-primary-runtime`, `~/.codex/skills/.system`, `~/.cursor/skills-cursor/`).
+
+Re-link on a new machine (after clone):
+```bash
+for tool in "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.cursor/skills"; do
+  mkdir -p "$tool"
+  for s in "$HOME"/loop-config/skills/*/; do ln -sfn "$s" "$tool/$(basename "$s")"; done
+done
+```
+Never put real API keys in a skill — skills reference keys from env/config, which stay
+out of this repo (see `.gitignore`).
+
 ## Per project (once per repo)
 The global manual can't know a project's commands. In each repo keep a short instructions
 file (`CLAUDE.md` for Claude Code, `AGENTS.md` for the rest — symlink them to share one)
