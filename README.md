@@ -66,13 +66,18 @@ dir just **symlinks** to here:
 Add/edit a skill once here → every agent sees it. Tool-built-in skills are left alone
 (`~/.codex/skills/codex-primary-runtime`, `~/.codex/skills/.system`, `~/.cursor/skills-cursor/`).
 
-Re-link on a new machine (after clone):
+### Adding a new skill later (the recurring workflow)
+Install the skill however you normally do (any tool drops it into that tool's `skills/`
+folder as a real directory). Then run one command — it moves new skills into the store and
+symlinks them into every tool:
 ```bash
-for tool in "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.cursor/skills"; do
-  mkdir -p "$tool"
-  for s in "$HOME"/loop-config/skills/*/; do ln -sfn "$s" "$tool/$(basename "$s")"; done
-done
+~/loop-config/bin/loop-skills.sh            # adopt new + relink everywhere
+~/loop-config/bin/loop-skills.sh --commit   # ...and version it (git add/commit/push)
 ```
+Authoring from scratch? Create the folder directly in `~/loop-config/skills/<name>/` and run
+the same command to symlink it out. The script is idempotent — safe to run anytime (e.g.
+after a `git pull` on a new machine, which is also how you re-link there).
+
 Never put real API keys in a skill — skills reference keys from env/config, which stay
 out of this repo (see `.gitignore`).
 
