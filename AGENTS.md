@@ -23,7 +23,7 @@ For any non-trivial task, follow this flow using the installed skills (don't imp
 2. **Isolate** — `using-git-worktrees` for feature work; `dispatching-parallel-agents` / `subagent-driven-development` when 2+ tasks are independent.
 3. **Build test-first** — `test-driven-development`.
 4. **Verify** — `verification-before-completion`: run the project's verify gate from its instructions file (build + tests + lint; backend AND frontend; run the app for UI) and confirm real output before claiming done.
-5. **Review + integrate** — `requesting-code-review`, then `finishing-a-development-branch` to open the PR. The human approves the PR (the gate). `receiving-code-review` when acting on feedback.
+5. **Review + integrate** — `requesting-code-review`, then `finishing-a-development-branch` to open the PR. After the PR is open, move the linked tracker issue to **In Review** (prefer the tracker's native PR automation; otherwise set it explicitly). The human approves the PR (the gate). `receiving-code-review` when acting on feedback.
 Stuck? `systematic-debugging`.
 
 ## Human approval (ask before running, never autonomous)
