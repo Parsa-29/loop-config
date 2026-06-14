@@ -11,6 +11,8 @@ purpose — it loads into every session and competes with real work for context.
 4. **Verify** — never say "done" until build + tests + lint pass for what you touched (commands live in the project's instructions file). Report real output. For UI/runtime, actually run it.
 5. **Learn** — record non-obvious decisions where the agent persists memory; keep the instructions file current.
 
+**Don't assume** - state your assumptions; if something is unclear, stop and ask; if multiple readings exist, present them, don't pick silently; push back when warranted. (Karpathy's rule.)
+
 ## Use what already exists
 Before writing anything from scratch, check for an existing skill, tool, command, or MCP
 server that fits — and use it. Don't reinvent capabilities the agent already has.
