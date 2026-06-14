@@ -12,7 +12,7 @@ to always develop in the Observe → Decide → Act → Verify → Learn loop.
 
 ## Install on a new machine
 ```bash
-git clone <this-repo> ~/loop-config
+git clone https://github.com/Parsa-29/loop-config.git ~/loop-config
 
 # 1. global working method
 cp ~/loop-config/CLAUDE.md ~/.claude/CLAUDE.md
