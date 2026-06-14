@@ -59,8 +59,9 @@ Drop `AGENTS.md` at the repo root — they read it as-is.
 `skills/` is the single source of truth for Agent Skills. All three tools use the same
 open `SKILL.md` format (frontmatter + `references/` + `scripts/`), so each tool's skills
 dir just **symlinks** to here:
+- `~/.agents/skills/<name>` → `~/loop-config/skills/<name>` (Codex user skills)
 - `~/.claude/skills/<name>` → `~/loop-config/skills/<name>`
-- `~/.codex/skills/<name>`  → `~/loop-config/skills/<name>`
+- `~/.codex/skills/<name>`  → `~/loop-config/skills/<name>` (compatibility)
 - `~/.cursor/skills/<name>` → `~/loop-config/skills/<name>`
 
 Add/edit a skill once here → every agent sees it. Tool-built-in skills are left alone
@@ -68,18 +69,30 @@ Add/edit a skill once here → every agent sees it. Tool-built-in skills are lef
 
 ### Adding a new skill later (the recurring workflow)
 Install the skill however you normally do (any tool drops it into that tool's `skills/`
-folder as a real directory). Then run one command — it moves new skills into the store and
-symlinks them into every tool:
+folder as a real directory). Then run the sync manually. This is intentionally not a
+background watcher: third-party skills are instructions/scripts, so adoption should stay
+reviewable.
 ```bash
-~/loop-config/bin/loop-skills.sh            # adopt new + relink everywhere
-~/loop-config/bin/loop-skills.sh --commit   # ...and version it (git add/commit/push)
+~/loop-config/bin/loop-skills.sh --dry-run  # preview adoption + links
+~/loop-config/bin/loop-skills.sh            # adopt valid new skills + relink everywhere
+~/loop-config/bin/loop-skills.sh --stage    # stage skills/ for review; no commit or push
 ```
 Authoring from scratch? Create the folder directly in `~/loop-config/skills/<name>/` and run
 the same command to symlink it out. The script is idempotent — safe to run anytime (e.g.
 after a `git pull` on a new machine, which is also how you re-link there).
 
+`loop-skills.sh` only adopts real directories with a valid `SKILL.md` frontmatter containing
+`name:` and `description:`. Conflicts are left untouched and reported.
+
 Never put real API keys in a skill — skills reference keys from env/config, which stay
 out of this repo (see `.gitignore`).
+
+Health check:
+```bash
+~/loop-config/bin/check-loop-config.sh
+```
+This validates the shell/JSON/TOML files, canonical skill metadata, missing adoptions, and
+missing symlinks. Drift is reported as warnings so you can run it before syncing.
 
 ## Per project (once per repo)
 The global manual can't know a project's commands. In each repo keep a short instructions
