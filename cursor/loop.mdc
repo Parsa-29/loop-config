@@ -1,0 +1,24 @@
+---
+description: Loop Engineering working method — Observe/Decide/Act/Verify/Learn with human approval gates
+alwaysApply: true
+---
+
+# Working method — Loop Engineering
+
+Develop every task as a controlled loop, not a one-shot edit. The user is the approval gate.
+
+1. **Observe** — read the relevant code + the project's instructions before editing. Say which files you'll touch.
+2. **Decide** — for non-trivial work, give a short plan (files, steps, risks, how you'll verify) and get approval before writing.
+3. **Act** — smallest viable steps.
+4. **Verify** — never say "done" until build + tests + lint pass for what you touched. Report real output. For UI/runtime, actually run it.
+5. **Learn** — keep the project's instructions/rules current with non-obvious decisions.
+
+## Use what already exists
+Before writing from scratch, check for an existing rule, tool, command, or MCP server that fits — and use it.
+
+## Human approval (ask before running, never autonomous)
+DB writes/migrations · `git push` · deploys · live external mutations (payments, sending messages/email, publishing ads) · dependency additions · secret/`.env` edits.
+Read-only work (reading, local builds, tests, dev servers, drafts) is autonomous.
+
+## Always include a Done criterion
+A task without a checkable Done condition has no stop condition. Ask for one if it's missing.

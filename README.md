@@ -1,27 +1,29 @@
 # loop-config
 
-Portable Loop Engineering working setup for Claude Code. Drop this onto any machine
-to always develop in the Observe → Decide → Act → Verify → Learn loop.
+Portable, **agent-neutral** Loop Engineering working setup. One source of truth
+(`AGENTS.md`), bridged to each AI coding agent so you always develop in the
+Observe → Decide → Act → Verify → Learn loop — in Claude Code, Codex, Cursor, or any
+tool that reads `AGENTS.md`.
 
-## What's here
-- `CLAUDE.md` — the global working method + task template + tool-reuse rule.
-  Goes to `~/.claude/CLAUDE.md` (loads into **every** project on the machine).
-- `settings.ask.json` — the human-approval gate (`permissions.ask`) for high-risk
-  commands (push, DB migrations, deploys, publish). **Merge** into your existing
-  `~/.claude/settings.json` — do not overwrite it (your `allow` list is machine-specific).
+## Source of truth
+- **`AGENTS.md`** — the working method + task template + tool-reuse rule. Edit this one
+  file; every agent gets a copy/symlink of it. `AGENTS.md` is the cross-tool standard
+  (Codex, Cursor, Copilot, Windsurf, Cline read it directly). Claude Code is the only one
+  that needs its own filename (`CLAUDE.md`).
 
-## Install on a new machine
+## Per-agent setup
+
+### Claude Code
+Reads `CLAUDE.md`, not `AGENTS.md`. Copy (or symlink) the manual and merge the gate:
 ```bash
-git clone https://github.com/Parsa-29/loop-config.git ~/loop-config
+cp ~/loop-config/AGENTS.md ~/.claude/CLAUDE.md          # global, all projects
+# (or: ln -sf ~/loop-config/AGENTS.md ~/.claude/CLAUDE.md  for auto-sync)
 
-# 1. global working method
-cp ~/loop-config/CLAUDE.md ~/.claude/CLAUDE.md
-
-# 2. merge the approval gate into ~/.claude/settings.json (creates it if missing)
+# merge the approval gate into ~/.claude/settings.json (preserves your allow list)
 node -e '
   const fs=require("fs"), os=require("os"), path=require("path");
   const p=path.join(os.homedir(),".claude","settings.json");
-  const ask=JSON.parse(fs.readFileSync(path.join(os.homedir(),"loop-config","settings.ask.json"),"utf8")).permissions.ask;
+  const ask=JSON.parse(fs.readFileSync(path.join(os.homedir(),"loop-config","claude","settings.ask.json"),"utf8")).permissions.ask;
   let s={}; try{ s=JSON.parse(fs.readFileSync(p,"utf8")); }catch{}
   s.permissions=s.permissions||{};
   s.permissions.ask=Array.from(new Set([...(s.permissions.ask||[]), ...ask]));
@@ -31,15 +33,47 @@ node -e '
 '
 ```
 
-## Per-project (do this once per repo)
-The global file can't know a project's build/test commands. In each repo, keep a
-`CLAUDE.md` with just that project's **verify gate** (build/test/lint commands) and
-its **risk tiers** (what needs approval). Keep it under ~100 lines.
+### Codex
+Reads `AGENTS.md` natively.
+```bash
+cp ~/loop-config/AGENTS.md ~/.codex/AGENTS.md           # global guidance, all projects
+```
+Approval gate: open `codex/config.gate.toml` and **merge** the two keys into
+`~/.codex/config.toml` (`approval_policy`, `sandbox_mode`).
+⚠️ Never copy/commit your real `~/.codex/config.toml` — it holds MCP API keys/tokens.
+
+### Cursor
+- **Global (User Rules):** Cursor stores these in the app, not a file. Paste the contents
+  of `AGENTS.md` into Settings → Rules → User Rules (one-time, per machine).
+- **Per project:** drop the rule file in the repo:
+  ```bash
+  mkdir -p <repo>/.cursor/rules && cp ~/loop-config/cursor/loop.mdc <repo>/.cursor/rules/loop.mdc
+  ```
+  (`alwaysApply: true` — loads in every chat. Note: `.cursorrules` is ignored in Agent mode.)
+
+### Any other tool (Copilot, Windsurf, Cline, Amp…)
+Drop `AGENTS.md` at the repo root — they read it as-is.
+
+## Per project (once per repo)
+The global manual can't know a project's commands. In each repo keep a short instructions
+file (`CLAUDE.md` for Claude Code, `AGENTS.md` for the rest — symlink them to share one)
+with just that project's **verify gate** (build/test/lint) and **risk tiers** (what needs
+approval). Keep it under ~100 lines.
+
+## Install on a new machine
+```bash
+git clone https://github.com/Parsa-29/loop-config.git ~/loop-config
+# then run the per-agent steps above for whichever tools you use
+```
+
+## Updating
+Edit `AGENTS.md` (and the per-tool files if needed) → commit → push. Re-run the copy step
+for each agent (or use symlinks so a `git pull` updates everything at once).
 
 ## Principles (why it's built this way)
-- CLAUDE.md has a real budget (~100-150 instruction slots). Keep global lean, don't
-  duplicate the loop into every project file, link long detail instead of inlining.
-- Don't restate tools the agent already auto-discovers (skills/MCPs). One rule —
-  "reuse an existing skill/MCP before building from scratch" — is enough.
-- The only deterministic guarantee is the approval gate (and hooks). Prose is guidance.
-  Don't over-engineer the harness; process discipline + a few durable files covers most.
+- Instruction files have a real budget (~100-150 slots; Cursor always-apply < ~2000 tokens).
+  Keep the manual lean, don't duplicate it into every project file, link long detail.
+- Don't restate tools the agent already auto-discovers. One rule — "reuse an existing
+  skill/tool/MCP before building from scratch" — is enough.
+- The only deterministic guarantees are the per-agent gates (Claude `ask`, Codex
+  sandbox/approval, Cursor allowlist). Prose is guidance. Don't over-engineer the harness.

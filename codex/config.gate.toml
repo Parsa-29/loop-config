@@ -1,0 +1,16 @@
+# Loop Engineering — Codex human-approval gate.
+# MERGE these keys into your existing ~/.codex/config.toml. Do NOT replace the file
+# and NEVER commit your real config.toml (it holds MCP API keys / tokens).
+#
+# Codex enforces the human gate via sandbox + approval policy (not per-command globs
+# like Claude Code). This combination keeps edits inside the workspace and makes Codex
+# ask before anything riskier (network, commands outside the project, escalations).
+
+approval_policy = "on-request"   # Codex asks for approval when an action needs it
+sandbox_mode    = "workspace-write"  # writes confined to the project; network/outside-workspace needs approval
+
+# Tighten further if you want more gating:
+#   approval_policy = "untrusted"      # approve anything not known-safe
+#   sandbox_mode    = "read-only"      # approve every write
+# Loosen (not recommended for the loop):
+#   approval_policy = "never"          # full autonomy — defeats the human gate
