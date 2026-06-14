@@ -10,3 +10,9 @@ settings.json
 !claude/settings.ask.json
 .env
 .env.*
+
+# Python bytecode / caches inside skills
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/

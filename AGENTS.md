@@ -15,6 +15,15 @@ purpose — it loads into every session and competes with real work for context.
 Before writing anything from scratch, check for an existing skill, tool, command, or MCP
 server that fits — and use it. Don't reinvent capabilities the agent already has.
 
+## The coding flow (multi-step tasks): plan → worktree → verify → PR
+For any non-trivial task, follow this flow using the installed skills (don't improvise it):
+1. **Plan** — `writing-plans` (and `brainstorming` if the goal is fuzzy). Output: files, steps, risks, the Done check.
+2. **Isolate** — `using-git-worktrees` for feature work; `dispatching-parallel-agents` / `subagent-driven-development` when 2+ tasks are independent.
+3. **Build test-first** — `test-driven-development`.
+4. **Verify** — `verification-before-completion`: run the project's verify gate from its instructions file (build + tests + lint; backend AND frontend; run the app for UI) and confirm real output before claiming done.
+5. **Review + integrate** — `requesting-code-review`, then `finishing-a-development-branch` to open the PR. The human approves the PR (the gate). `receiving-code-review` when acting on feedback.
+Stuck? `systematic-debugging`.
+
 ## Human approval (ask before running, never autonomous)
 DB writes/migrations · `git push` · deploys · live external mutations (payments, sending
 messages/email, publishing ads) · dependency additions · secret/`.env` edits.
