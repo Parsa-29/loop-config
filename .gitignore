@@ -1,2 +1,12 @@
 .DS_Store
 node_modules/
+
+# Never commit real agent configs — they hold MCP API keys / tokens.
+# Only the secrets-free snippets (codex/config.gate.toml, claude/settings.ask.json) belong here.
+config.toml
+**/config.toml
+settings.json
+**/settings.json
+!claude/settings.ask.json
+.env
+.env.*
