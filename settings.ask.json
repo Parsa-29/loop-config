@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(npx supabase db push:*)",
+      "Bash(npx supabase db reset:*)",
+      "Bash(supabase db push:*)",
+      "Bash(supabase db reset:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(npm run db:reset:*)",
+      "Bash(npm run migration:run:*)",
+      "Bash(npm publish:*)",
+      "Bash(vercel deploy:*)",
+      "Bash(vercel --prod:*)",
+      "Bash(railway up:*)",
+      "Bash(fly deploy:*)"
+    ]
+  }
+}
