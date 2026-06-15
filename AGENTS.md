@@ -18,7 +18,10 @@ Before writing anything from scratch, check for an existing skill, tool, command
 server that fits — and use it. Don't reinvent capabilities the agent already has.
 
 ## The coding flow (multi-step tasks): plan → worktree → verify → PR
-For any non-trivial task, follow this flow using the installed skills (don't improvise it):
+For any non-trivial task, follow this flow using the installed skills (don't improvise it).
+
+**Scale ceremony to the task.** The Loop core never scales away: read first, plan non-trivial work, verify before "done", human-approve risky actions. Only the scaffolding scales — skip worktree/PR/Linear for small direct edits (work on the branch, show the diff, commit on approval). Non-code work (research, docs) uses the Loop with research/doc skills (`deep-research`, `last30days`, `web-search`), not this flow.
+
 1. **Plan** — `writing-plans` (and `brainstorming` if the goal is fuzzy). Output: files, steps, risks, the Done check.
 2. **Isolate** — `using-git-worktrees` for feature work; `dispatching-parallel-agents` / `subagent-driven-development` when 2+ tasks are independent.
 3. **Build test-first** — `test-driven-development`.
