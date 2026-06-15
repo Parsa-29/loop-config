@@ -100,6 +100,33 @@ file (`CLAUDE.md` for Claude Code, `AGENTS.md` for the rest — symlink them to 
 with just that project's **verify gate** (build/test/lint) and **risk tiers** (what needs
 approval). Keep it under ~100 lines.
 
+## Planning tasks (so the flow runs smoothly)
+
+A task is "flow-ready" when the agent can plan, build, and verify it without guessing.
+
+**Anatomy of a good task** (matches a well-formed Linear issue):
+```
+## Problem      — what & why, in 1-3 concrete sentences
+## Plan         — rough steps (optional; the agent refines after reading the code)
+## Done         — a checkable condition (the single most important part)
+## Verification — exact commands (e.g. npm test / npm run build / endpoint returns X)
+```
+Plus three qualities:
+- **Done is testable** — not "X works" but "`npm test` passes / endpoint returns Y". No checkable Done = the loop has no stop condition.
+- **Scoped** — one task = one goal; say what NOT to touch.
+- **Independent** — tasks that touch the same files can't run as parallel worktrees. Split by file/module so they can.
+
+**Match the size to the form:**
+| Size | Where | Form |
+|------|-------|------|
+| Quick fix | straight to the agent in chat | `Service / Goal / Done` (3 lines) |
+| Standard | a tracker issue (Linear, etc.) | Problem / Done / Verification |
+| Big goal | break it down first | `brainstorming` or `to-prd` → N independent issues |
+
+**Breaking a big goal into tasks:** run `brainstorming`/`to-prd` to shape the scope, split into independent, separately-verifiable pieces (by file/module boundary), write each as an issue with the template above. Independent pieces → parallel worktree agents; coupled pieces → sequential.
+
+**Tip:** the agent can draft and create well-structured issues for you (Problem/Done/Verification) from a one-line goal — creating/editing tracker issues is an external mutation, so it asks before writing.
+
 ## Install on a new machine
 ```bash
 git clone https://github.com/Parsa-29/loop-config.git ~/loop-config
