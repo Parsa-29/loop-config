@@ -52,14 +52,15 @@ Show the user the complete plan BEFORE writing anything to Linear:
 ### 4. Create in Linear (only after approval)
 - **Idempotency check first**: if issues with this `feat:<slug>` label already exist, do NOT duplicate — report what exists and ask whether to add/update instead.
 - Create the **parent issue** (the feature) in the chosen project: title = feature name, description = overview + the task list + acceptance for the feature as a whole.
-- Create each **task as a sub-issue** of that parent (`parentId`), in the same project, with: full task-template description, labels, `gitBranchName` set to the chosen branch, status `Backlog`/`Todo`.
-- Set **dependencies** (blocks / blocked-by) per the ordering. If the Linear tools don't expose issue relations, fall back to: a `Blocked by: [slug N]` line in each description + the `[slug N/M]` numbering + sub-issue order. (Verify which is supported at runtime; don't assume.)
+- Create each **task as a sub-issue** of that parent (`parentId`), in the same project, with: full task-template description, labels, status `Backlog`/`Todo`.
+- Set **dependencies** with the native `blockedBy` / `blocks` params on `save_issue` (confirmed supported) — e.g. the test task `blockedBy: [task1, task2]`. These are real Linear relations, not description text — don't duplicate them as a `Blocked by:` line in the description.
+- **Branch / PR linking:** Linear's `gitBranchName` cannot be set via the API (it auto-generates `xxivansbxx/adm-NN-...`), so do NOT rely on a custom `feat/<slug>/NN` branch name for linking. Instead require the executor to put `Closes <issue-id>` (e.g. `Closes ADM-67`) in the PR — Linear links by that magic-word regardless of branch. Per-issue branches never collide anyway; feature isolation comes from `parentId` + the `feat:<slug>` label, not the branch prefix.
 - Keep titles prefixed `[slug N/M]` so order is obvious everywhere.
 
 ### 5. Handoff + report
 - Report the created parent + sub-issues with links, the order, and which are parallel-safe.
 - Note how execution starts (assign issue to the executor agent / Cyrus / Linear agent) — but do NOT start executing here. plantask ends at created, ready-to-run tasks.
-- A progress comment convention: the executor should `save_comment` on each task as it works, and PRs auto-link via the `gitBranchName` + a `Closes <issue-id>` line in the PR body.
+- A progress comment convention: the executor should `save_comment` on each task as it works, and **must** put `Closes <issue-id>` (e.g. `Closes ADM-67`) in the PR title/body so Linear auto-links the PR to the task — do not depend on branch-name matching.
 
 ## Multiple features
 Run `/plantask` once per feature. Each run creates its own parent issue + `feat:<slug>`. NEVER place two different features' tasks under one parent or share a slug. Three features on one project = three parents, three slugs, three branch namespaces — zero mixing.
