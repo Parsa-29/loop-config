@@ -47,7 +47,7 @@ Show the user the complete plan BEFORE writing anything to Linear:
 - target team/project, feature slug, parent-issue title;
 - the ordered task list with: number, title, one-line goal, Done, labels, deps (what blocks what), independence flag, branch name;
 - any new labels you'll create.
-**Wait for explicit approval.** Creating/editing Linear issues is an external mutation — do not write until the user says go. If they adjust scope, revise and re-show.
+**Wait for explicit approval.** State clearly that approving authorizes BOTH creating the issues AND dispatching them to the executor (Cyrus) so coding starts automatically — the user is approving execution, not just issue creation. Creating Linear issues + triggering an autonomous agent are external mutations — do not proceed until the user says go. If they want **plan-only** (create issues but NOT auto-execute), honor that and skip step 5's dispatch. If they adjust scope, revise and re-show.
 
 ### 4. Create in Linear (only after approval)
 - **Idempotency check first**: if issues with this `feat:<slug>` label already exist, do NOT duplicate — report what exists and ask whether to add/update instead.
@@ -65,10 +65,13 @@ The executor (Cyrus) only acts on repos registered in its config, and uses that 
 - Result: a brand-new project's **first** `/plantask` auto-registers its repo; from then on every issue in that Linear project — planned or manual — routes to it with no manual cloning.
 - If `cyrus` is not installed/found, note it and continue (don't fail the plan) — the user can register later per `EXECUTOR.md`.
 
-### 5. Handoff + report
-- Report the created parent + sub-issues with links, the order, and which are parallel-safe.
-- Note how execution starts (assign issue to the executor agent / Cyrus / Linear agent) — but do NOT start executing here. plantask ends at created, ready-to-run tasks.
-- A progress comment convention: the executor should `save_comment` on each task as it works, and **must** put `Closes <issue-id>` (e.g. `Closes ADM-67`) in the PR title/body so Linear auto-links the PR to the task — do not depend on branch-name matching.
+### 5. Dispatch to the executor + report
+- **Auto-dispatch (this is the point of plantask).** Once ALL issues are created and the plan was approved (step 3), assign/delegate the **whole batch** to the executor agent — `save_issue(id, delegate: "Cyrus")` (or assignee = the Cyrus agent) for each task. This is the trigger: Cyrus picks them up and **starts coding automatically**.
+  - Do this as the **FINAL step, after every issue exists** — never dispatch mid-creation (that would start task 1 before task 2 is planned, breaking "wait until all planned").
+  - Assign **all** of them — `blockedBy` ensures Cyrus only starts the unblocked tasks; blocked ones auto-start as their deps complete. (Respect any concurrency cap configured in Cyrus.)
+  - **Plan-only mode:** if the user chose plan-only in step 3, SKIP dispatch — leave issues in Backlog, unassigned.
+- **Report** the created parent + sub-issues with links, the order, the parallel-safe set, and confirm they've been dispatched to Cyrus (or left in Backlog if plan-only).
+- Progress convention: the executor `save_comment`s on each task as it works, and **must** put `Closes <issue-id>` (e.g. `Closes ADM-67`) in the PR title/body so Linear auto-links the PR — not branch-name matching. The human gate is the PR review/merge.
 
 ## Multiple features
 Run `/plantask` once per feature. Each run creates its own parent issue + `feat:<slug>`. NEVER place two different features' tasks under one parent or share a slug. Three features on one project = three parents, three slugs, three branch namespaces — zero mixing.
