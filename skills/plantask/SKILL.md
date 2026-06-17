@@ -39,6 +39,7 @@ Run as `/plantask <idea>` (a feature, a bug, or any piece of work). One run = ON
   - a **type** label (feature / bug / improvement),
   - an **area** label (the module/domain),
   - the **`feat:<slug>`** label (create it if missing — flag this in the plan),
+  - the **executor routing label = the repo's name** (e.g. `admagica-agents`), on EVERY task. Cyrus routes an issue to a repo by matching this against that repo's `routingLabels` in `~/.cyrus/config.json` (default = repo name). Without it Cyrus can't tell which repo and stops to ask ("repository selection elicitation") instead of starting. Create the label in Linear if missing.
   - *(optional, only if a routing rule is configured)* a `route:<tool>` label for which executor should run it.
 - Choose a **branch name** per task: `feat/<slug>/NN-short-title`.
 
