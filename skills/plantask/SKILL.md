@@ -57,6 +57,14 @@ Show the user the complete plan BEFORE writing anything to Linear:
 - **Branch / PR linking:** Linear's `gitBranchName` cannot be set via the API (it auto-generates `xxivansbxx/adm-NN-...`), so do NOT rely on a custom `feat/<slug>/NN` branch name for linking. Instead require the executor to put `Closes <issue-id>` (e.g. `Closes ADM-67`) in the PR — Linear links by that magic-word regardless of branch. Per-issue branches never collide anyway; feature isolation comes from `parentId` + the `feat:<slug>` label, not the branch prefix.
 - Keep titles prefixed `[slug N/M]` so order is obvious everywhere.
 
+### 4b. Register the repo with the executor (auto — covers /plantask AND manual issues)
+The executor (Cyrus) only acts on repos registered in its config, and uses that as the project→repo map — so this registration serves **both** `/plantask`-created issues and ones you create by hand in Linear later.
+- Get the remote of the repo you're planning in: `git remote get-url origin`.
+- Check if it's already registered: `grep -q "<repo-name>" ~/.cyrus/config.json 2>/dev/null`. If yes, skip (idempotent).
+- If not, register + clone it once: `cyrus self-add-repo "<remote-url>" "<linear-workspace>"`. Cyrus clones into `~/.cyrus/repos` (isolated from your working tree) and maps it to the workspace/project.
+- Result: a brand-new project's **first** `/plantask` auto-registers its repo; from then on every issue in that Linear project — planned or manual — routes to it with no manual cloning.
+- If `cyrus` is not installed/found, note it and continue (don't fail the plan) — the user can register later per `EXECUTOR.md`.
+
 ### 5. Handoff + report
 - Report the created parent + sub-issues with links, the order, and which are parallel-safe.
 - Note how execution starts (assign issue to the executor agent / Cyrus / Linear agent) — but do NOT start executing here. plantask ends at created, ready-to-run tasks.
