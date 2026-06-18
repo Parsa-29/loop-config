@@ -23,8 +23,15 @@ appeared as both `cyrusagents` and `ceedaragents`; trust the live README.
   (nuance #1) — nothing runs before the plan is complete.
 - **Ordering.** `blockedBy` relations keep blocked tasks from starting; only unblocked sub-issues
   run. Independent (parallel-safe) tasks get their own worktrees.
-- **PR linking.** Cyrus opens the PR; ensure `Closes <issue-id>` is in it so Linear links it
-  (don't rely on branch-name matching — see the plantask skill).
+  - ⚠️ **A blocked task does NOT auto-start when its blockers reach Done** (Cyrus reacts to
+    webhooks, it doesn't watch the dependency graph). After the human merges a blocker's PR,
+    re-trigger the now-unblocked dependent: ensure it has the routing label, then reply the repo
+    URL in its agent-session thread (or re-delegate). Verified on ADM-74 — it sat in Backlog after
+    71/72/73 merged until manually triggered.
+- **PR linking.** Cyrus's auto branch (`cyrus/adm-NN-...`) links the PR to that task's OWN sub-issue
+  and moves it to Done on merge (branch-name matching works — verified). Each sub-PR closes its own
+  issue; **never put `Closes <parent>` in a sub-PR** (it closes the whole feature on first merge).
+  Let the parent close via Linear's "complete parent when all sub-issues complete" or only the final task.
 - **Repo registration (auto).** A repo must be registered with Cyrus once (`cyrus self-add-repo "<url>" "<workspace>"`) — Cyrus only acts on registered repos and uses this as the project→repo map. `/plantask` does this automatically on a project's first run, so it covers BOTH planned and hand-created Linear issues. Per task: nothing — Cyrus worktrees each issue from the existing clone.
 - **Human gate stays.** PRs are reviewed/merged by you. Cyrus does not merge to main.
 
