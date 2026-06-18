@@ -40,10 +40,11 @@ A fresh Cyrus worktree is cloned from `origin/main` and has **no `.env`** (gitig
 - `ClaudeRunner.loadRepositoryEnv(worktree)` reads `<worktree>/.env`, `dotenv.parse`s it, and spreads it into the agent's session env at session start (`cyrus-claude-runner/dist/ClaudeRunner.js:359,505`).
 - `GitService.createSingleRepoWorktree` runs `WorktreeIncludeService.copyIgnoredFiles(repoPath, worktree)` then `runRepoSetupScript(...)` on every worktree creation (`cyrus-edge-worker/dist/GitService.js:552,558`). `.worktreeinclude` lists gitignored files to copy in (a file must match BOTH `.gitignore` AND `.worktreeinclude`).
 
-**Setup per repo (do NOT use the global `~/.cyrus/.env` for app secrets — it collides across projects):**
-1. `cp <project .env> ~/.cyrus/repos/<repo>/.env` (base clone root) + `chmod 600`. File→file only; never print values.
-2. Add `.env` to `~/.cyrus/repos/<repo>/.worktreeinclude` (and ideally commit a `.worktreeinclude` with `.env` to the repo, so it survives re-clones).
-3. That's it — every future worktree gets the `.env` copied in and auto-loaded into the agent's env. Per-repo isolated.
+**Setup per repo — ONE atomic command (do NOT use the global `~/.cyrus/.env` for app secrets — it collides across projects):**
+```
+~/loop-config/bin/cyrus-repo-env.sh <repo-name> <path-to-project-.env>
+```
+It copies `.env` into the clone, `chmod 600`s it, adds `.env` to `.worktreeinclude`, and verifies all three — printing `OK:` only when worktrees will actually receive the env. Idempotent. **Do this in one step, never hand-do the parts** — the failure we hit (`.env` copied but `.worktreeinclude` forgotten → env-less worktrees → backend build/migrate fails) came from doing it piecemeal. Also commit a `.worktreeinclude` containing `.env` to the repo so it survives re-clones. Before dispatching a repo's tasks, re-check: `grep -qxF .env ~/.cyrus/repos/<repo>/.worktreeinclude && ls ~/.cyrus/repos/<repo>/.env`.
 
 Gotchas: `loadRepositoryEnv` runs at **session start**, so a `.env` added mid-session doesn't apply (re-trigger). Scripts that read `process.env` directly (no `dotenv`) still work because Cyrus injects into the process env. Per-worktree deps (`npm ci`) or generated files go in a committed `cyrus-setup.sh` at the repo root (runs after the worktree is created). The global `EdgeConfig.global_setup_script` runs for ALL repos — reserve it for truly cross-repo setup, not per-project env.
 

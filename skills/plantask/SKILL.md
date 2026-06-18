@@ -67,13 +67,13 @@ The executor (Cyrus) only acts on repos registered in its config, and uses that 
 - If `cyrus` is not installed/found, note it and continue (don't fail the plan) — the user can register later per `EXECUTOR.md`.
 
 **Give the new repo its `.env` (do this on first registration — most projects need it).** A fresh Cyrus clone has no `.env` (gitignored), so any task that builds/tests/calls a real API will fail without it. Cyrus loads `<worktree>/.env` into the agent's session env automatically (`ClaudeRunner.loadRepositoryEnv`), and copies any file listed in `.worktreeinclude` into each new worktree (`GitService.copyIgnoredFiles`). So, per-repo, isolated, no global collisions:
-  - **Ask the user for the project's `.env`** (path, or have them drop it). NEVER read its values into the conversation — copy file→file with Bash only.
-  - Place it at the base clone root: `cp <their .env> ~/.cyrus/repos/<repo>/.env` and `chmod 600`.
-  - Ensure `.env` is listed in `~/.cyrus/repos/<repo>/.worktreeinclude` (create/append the file). Recommend the user also commit a `.worktreeinclude` containing `.env` to the repo so it survives re-clones.
-  - Idempotent: if `~/.cyrus/repos/<repo>/.env` already exists, ask before overwriting.
+  - **Ask the user for the project's `.env`** (path, or have them drop it). NEVER read its values into the conversation.
+  - Run the **one atomic helper** — it copies the `.env` into the clone, chmods it, adds `.env` to `.worktreeinclude`, AND verifies all three (so it can't be done half-way, the bug that bit us before): `~/loop-config/bin/cyrus-repo-env.sh <repo-name> <path-to-project-.env>`. It prints `OK:` only when worktrees will actually receive the env; treat anything else as a hard stop. Idempotent — safe to re-run. Do NOT hand-do the `cp`/`.worktreeinclude` steps separately.
+  - Idempotency: if `~/.cyrus/repos/<repo>/.env` already exists, ask before overwriting (the helper overwrites).
   - If a task needs per-worktree deps (e.g. `npm ci`) or generated files, that goes in a committed `cyrus-setup.sh` at the repo root (runs after worktree creation) — flag it, don't build it blindly.
 
 ### 5. Dispatch to the executor + report
+- **Pre-dispatch verify gate.** Before delegating, for EACH repo the batch routes to, confirm onboarding is complete: the repo is registered in `~/.cyrus/config.json` with a matching routing label, AND (if it needs env) `cyrus-repo-env.sh` printed `OK` for it. A quick re-check: `grep -qxF .env ~/.cyrus/repos/<repo>/.worktreeinclude && ls ~/.cyrus/repos/<repo>/.env`. If a repo isn't fully onboarded, do NOT dispatch its tasks — finish onboarding first (a half-onboarded repo silently produces env-less worktrees → failed builds/migrations).
 - **Auto-dispatch (this is the point of plantask).** Once ALL issues are created and the plan was approved (step 3), assign/delegate the **whole batch** to the executor agent — `save_issue(id, delegate: "Cyrus")` (or assignee = the Cyrus agent) for each task. This is the trigger: Cyrus picks them up and **starts coding automatically**.
   - Do this as the **FINAL step, after every issue exists** — never dispatch mid-creation (that would start task 1 before task 2 is planned, breaking "wait until all planned").
   - Assign **all** of them — at dispatch Cyrus starts only the currently-**unblocked** tasks (`blockedBy` holds the rest). (Respect any concurrency cap configured in Cyrus.)
