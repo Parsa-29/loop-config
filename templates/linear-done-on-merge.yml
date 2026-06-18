@@ -1,0 +1,59 @@
+name: Linear — move issue to Done on PR merge
+# Installed by loop-config (cyrus-repo-linear-done.sh). Makes "PR merged → issue Done"
+# work for ANY repo/org without Linear's GitHub integration. Requires one repo secret:
+#   LINEAR_API_KEY  (Linear → Settings → Security & access → Personal API keys)
+on:
+  pull_request:
+    types: [closed]
+jobs:
+  linear-done:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move linked Linear issue to Done
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          if [ -z "${LINEAR_API_KEY:-}" ]; then
+            echo "LINEAR_API_KEY secret not set — skipping (add it in repo Settings → Secrets)."; exit 0
+          fi
+          api() {
+            curl -sS -X POST https://api.linear.app/graphql \
+              -H "Authorization: $LINEAR_API_KEY" \
+              -H "Content-Type: application/json" --data "$1"
+          }
+
+          # 1) Resolve the issue from the PR's head branch (Cyrus branches carry the identifier, e.g. cyrus/adm-77-...)
+          q1=$(jq -nc --arg b "$BRANCH" '{query:"query($b:String!){issueVcsBranchSearch(branchName:$b){id identifier team{id}}}",variables:{b:$b}}')
+          r1=$(api "$q1")
+          issue_id=$(echo "$r1" | jq -r '.data.issueVcsBranchSearch.id // empty')
+          team_id=$(echo "$r1" | jq -r '.data.issueVcsBranchSearch.team.id // empty')
+
+          # 1b) Fallback: pull an identifier (ABC-123) from branch/title/body and search
+          if [ -z "$issue_id" ]; then
+            ident=$(printf '%s %s %s' "$BRANCH" "$TITLE" "$BODY" | grep -oiE '[A-Z]{2,}-[0-9]+' | head -1 | tr '[:lower:]' '[:upper:]' || true)
+            if [ -n "$ident" ]; then
+              q1b=$(jq -nc --arg t "$ident" '{query:"query($t:String!){searchIssues(term:$t,first:1){nodes{id identifier team{id}}}}",variables:{t:$t}}')
+              r1b=$(api "$q1b")
+              issue_id=$(echo "$r1b" | jq -r '.data.searchIssues.nodes[0].id // empty')
+              team_id=$(echo "$r1b" | jq -r '.data.searchIssues.nodes[0].team.id // empty')
+            fi
+          fi
+          if [ -z "$issue_id" ] || [ -z "$team_id" ]; then
+            echo "No linked Linear issue found for branch '$BRANCH' — skipping."; exit 0
+          fi
+
+          # 2) Find a completed ("Done") workflow state for that team
+          q2=$(jq -nc --arg tid "$team_id" '{query:"query($tid:String!){workflowStates(filter:{team:{id:{eq:$tid}},type:{eq:\"completed\"}}){nodes{id name}}}",variables:{tid:$tid}}')
+          r2=$(api "$q2")
+          state_id=$(echo "$r2" | jq -r '.data.workflowStates.nodes[0].id // empty')
+          if [ -z "$state_id" ]; then echo "No completed state for team — skipping."; exit 0; fi
+
+          # 3) Move the issue to Done
+          q3=$(jq -nc --arg id "$issue_id" --arg s "$state_id" '{query:"mutation($id:String!,$s:String!){issueUpdate(id:$id,input:{stateId:$s}){success}}",variables:{id:$id,s:$s}}')
+          r3=$(api "$q3")
+          echo "issueUpdate success: $(echo "$r3" | jq -r '.data.issueUpdate.success // false') (issue=$issue_id state=$state_id)"

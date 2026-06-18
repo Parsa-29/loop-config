@@ -58,6 +58,11 @@ Two layers (both written into `~/.cyrus/config.json`, hot-reloaded):
 - **`disallowedTools`** (hard SDK backstop): denylist of the obvious destructive commands (`prisma migrate/db push/db execute`, `npm run prisma:*`/`db:reset`/`db:push`, `rm -rf`, `git push -f/--force`).
 Apply to EVERY repo at registration (it's a `/plantask` onboarding step). Idempotent. The behavioral layer is what shaped ADM-76 to generate its migration offline and ask the human to apply it.
 
+## Auto-Done on merge → unblock the chain (no Linear GitHub integration needed)
+Cyrus's `blockedBy` gate keys off the blocker issue's **Done** state, not the PR merge. Linear only auto-moves an issue to Done on merge if the repo is connected to Linear's GitHub integration — which can't be set up programmatically and may be impossible for repos in other GitHub orgs. Without it, every chain step needs a manual "set Done + re-trigger".
+
+Fix, per repo, installable at onboarding: `~/loop-config/bin/cyrus-repo-linear-done.sh <repo>` commits `.github/workflows/linear-done-on-merge.yml` (template in `loop-config/templates/`). On a merged PR it resolves the issue from the head branch (`issueVcsBranchSearch`, fallback: `ABC-123` regex), finds the team's completed state, and `issueUpdate`s the issue to Done — via the Linear API, so it works for ANY org. One-time activation: add a `LINEAR_API_KEY` repo secret + push/merge the workflow branch. Once the issue flips to Done, Linear emits an issue webhook that reaches Cyrus, which re-checks parked dependents (`Re-prompt on parked session …`) — so the next blocked task can advance hands-off. (Verify this auto-resume on the next chain; if Cyrus still needs a nudge, reply "proceed" in the dependent's thread.)
+
 ## Rate-limit policy (nuance #3 — decided)
 On a rate limit, **wait and resume the SAME tool** — do NOT switch Codex↔Claude mid-task
 (two half-attempts, wasted budget, fragile cross-tool resume). Reserve a tool switch for a tool
