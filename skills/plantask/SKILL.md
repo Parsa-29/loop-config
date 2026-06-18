@@ -66,6 +66,13 @@ The executor (Cyrus) only acts on repos registered in its config, and uses that 
 - Result: a brand-new project's **first** `/plantask` auto-registers its repo; from then on every issue in that Linear project — planned or manual — routes to it with no manual cloning.
 - If `cyrus` is not installed/found, note it and continue (don't fail the plan) — the user can register later per `EXECUTOR.md`.
 
+**Give the new repo its `.env` (do this on first registration — most projects need it).** A fresh Cyrus clone has no `.env` (gitignored), so any task that builds/tests/calls a real API will fail without it. Cyrus loads `<worktree>/.env` into the agent's session env automatically (`ClaudeRunner.loadRepositoryEnv`), and copies any file listed in `.worktreeinclude` into each new worktree (`GitService.copyIgnoredFiles`). So, per-repo, isolated, no global collisions:
+  - **Ask the user for the project's `.env`** (path, or have them drop it). NEVER read its values into the conversation — copy file→file with Bash only.
+  - Place it at the base clone root: `cp <their .env> ~/.cyrus/repos/<repo>/.env` and `chmod 600`.
+  - Ensure `.env` is listed in `~/.cyrus/repos/<repo>/.worktreeinclude` (create/append the file). Recommend the user also commit a `.worktreeinclude` containing `.env` to the repo so it survives re-clones.
+  - Idempotent: if `~/.cyrus/repos/<repo>/.env` already exists, ask before overwriting.
+  - If a task needs per-worktree deps (e.g. `npm ci`) or generated files, that goes in a committed `cyrus-setup.sh` at the repo root (runs after worktree creation) — flag it, don't build it blindly.
+
 ### 5. Dispatch to the executor + report
 - **Auto-dispatch (this is the point of plantask).** Once ALL issues are created and the plan was approved (step 3), assign/delegate the **whole batch** to the executor agent — `save_issue(id, delegate: "Cyrus")` (or assignee = the Cyrus agent) for each task. This is the trigger: Cyrus picks them up and **starts coding automatically**.
   - Do this as the **FINAL step, after every issue exists** — never dispatch mid-creation (that would start task 1 before task 2 is planned, breaking "wait until all planned").

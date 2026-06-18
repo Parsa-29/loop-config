@@ -35,6 +35,18 @@ appeared as both `cyrusagents` and `ceedaragents`; trust the live README.
 - **Repo registration (auto).** A repo must be registered with Cyrus once (`cyrus self-add-repo "<url>" "<workspace>"`) — Cyrus only acts on registered repos and uses this as the project→repo map. `/plantask` does this automatically on a project's first run, so it covers BOTH planned and hand-created Linear issues. Per task: nothing — Cyrus worktrees each issue from the existing clone.
 - **Human gate stays.** PRs are reviewed/merged by you. Cyrus does not merge to main.
 
+## Giving a repo its environment (`.env`) — per-repo, no global collisions
+A fresh Cyrus worktree is cloned from `origin/main` and has **no `.env`** (gitignored), so build/test/real-API tasks fail without it. Verified mechanism (cyrus 0.40.1):
+- `ClaudeRunner.loadRepositoryEnv(worktree)` reads `<worktree>/.env`, `dotenv.parse`s it, and spreads it into the agent's session env at session start (`cyrus-claude-runner/dist/ClaudeRunner.js:359,505`).
+- `GitService.createSingleRepoWorktree` runs `WorktreeIncludeService.copyIgnoredFiles(repoPath, worktree)` then `runRepoSetupScript(...)` on every worktree creation (`cyrus-edge-worker/dist/GitService.js:552,558`). `.worktreeinclude` lists gitignored files to copy in (a file must match BOTH `.gitignore` AND `.worktreeinclude`).
+
+**Setup per repo (do NOT use the global `~/.cyrus/.env` for app secrets — it collides across projects):**
+1. `cp <project .env> ~/.cyrus/repos/<repo>/.env` (base clone root) + `chmod 600`. File→file only; never print values.
+2. Add `.env` to `~/.cyrus/repos/<repo>/.worktreeinclude` (and ideally commit a `.worktreeinclude` with `.env` to the repo, so it survives re-clones).
+3. That's it — every future worktree gets the `.env` copied in and auto-loaded into the agent's env. Per-repo isolated.
+
+Gotchas: `loadRepositoryEnv` runs at **session start**, so a `.env` added mid-session doesn't apply (re-trigger). Scripts that read `process.env` directly (no `dotenv`) still work because Cyrus injects into the process env. Per-worktree deps (`npm ci`) or generated files go in a committed `cyrus-setup.sh` at the repo root (runs after the worktree is created). The global `EdgeConfig.global_setup_script` runs for ALL repos — reserve it for truly cross-repo setup, not per-project env.
+
 ## Rate-limit policy (nuance #3 — decided)
 On a rate limit, **wait and resume the SAME tool** — do NOT switch Codex↔Claude mid-task
 (two half-attempts, wasted budget, fragile cross-tool resume). Reserve a tool switch for a tool
