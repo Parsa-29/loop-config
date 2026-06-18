@@ -48,6 +48,16 @@ It copies `.env` into the clone, `chmod 600`s it, adds `.env` to `.worktreeinclu
 
 Gotchas: `loadRepositoryEnv` runs at **session start**, so a `.env` added mid-session doesn't apply (re-trigger). Scripts that read `process.env` directly (no `dotenv`) still work because Cyrus injects into the process env. Per-worktree deps (`npm ci`) or generated files go in a committed `cyrus-setup.sh` at the repo root (runs after the worktree is created). The global `EdgeConfig.global_setup_script` runs for ALL repos — reserve it for truly cross-repo setup, not per-project env.
 
+## Safety guard — agent must never delete data or do destructive things
+Once a repo's real env (live DB/secrets) reaches the worktree, the executor agent could in principle run a destructive command. Lock that down per repo with ONE command:
+```
+~/loop-config/bin/cyrus-repo-guard.sh <repo-name>
+```
+Two layers (both written into `~/.cyrus/config.json`, hot-reloaded):
+- **`appendInstruction`** (behavioral, primary): never apply migrations to a live DB (offline `prisma migrate diff` only — a human applies); never DELETE/DROP/TRUNCATE/destructive SQL; no `rm -rf`, force-push, branch/remote deletion; no deploys/payments/secret edits/external mutations. Stop and ask in the issue thread instead. Deliverable is a PR a human reviews.
+- **`disallowedTools`** (hard SDK backstop): denylist of the obvious destructive commands (`prisma migrate/db push/db execute`, `npm run prisma:*`/`db:reset`/`db:push`, `rm -rf`, `git push -f/--force`).
+Apply to EVERY repo at registration (it's a `/plantask` onboarding step). Idempotent. The behavioral layer is what shaped ADM-76 to generate its migration offline and ask the human to apply it.
+
 ## Rate-limit policy (nuance #3 — decided)
 On a rate limit, **wait and resume the SAME tool** — do NOT switch Codex↔Claude mid-task
 (two half-attempts, wasted budget, fragile cross-tool resume). Reserve a tool switch for a tool
