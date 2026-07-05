@@ -37,10 +37,16 @@ Use this skill when the user:
    - If the issue has a parent, read the parent issue for feature-level context.
    - If the issue is blocked by other issues or depends on previous work, read those issues, their latest completion/handoff comments, and linked PRs when available.
    - Do not assume a fresh agent session remembers earlier tasks.
+   - Complete this intake before coding:
+     - parent Feature Context Packet understood;
+     - task `Required Context Before Coding` checklist complete;
+     - blocker handoffs reviewed or explicitly missing;
+     - expected contracts from previous tasks identified;
+     - code inspected to confirm the plan still matches reality.
 
 4. Plan before non-trivial work.
    - For multi-file, risky, or ambiguous changes, post a short implementation plan as a Linear comment.
-   - Include intended files/modules, verification commands, risks, and blockers.
+   - Include intended files/modules, verification commands, risks, blockers, and any mismatch between the Linear plan, handoff comments, Project Brain, and actual code.
 
 5. Keep status aligned.
    - Move to `In Progress` when implementation starts.
@@ -49,6 +55,29 @@ Use this skill when the user:
 
 6. Report completion in Linear.
    - Comment with summary, changed files, verification output, unresolved risks, and PR link if available.
+   - For tasks that may unblock later work, include a `HANDOFF FOR NEXT TASKS` section:
+     ```md
+     ## HANDOFF FOR NEXT TASKS
+
+     ### Summary
+     What changed and why.
+
+     ### Changed Files
+     - `path/file.ext`: what changed
+
+     ### New / Changed Contracts
+     - Function/component/API/schema/behavior later tasks should rely on.
+
+     ### Verification Run
+     - Command: ...
+     - Result: ...
+
+     ### PR
+     <link>
+
+     ### Risks / Follow-ups
+     Anything the next task must know.
+     ```
    - Do not mark complete unless the requested done condition is satisfied.
 
 ## Guardrails
@@ -68,6 +97,7 @@ Plan:
 - Files/modules: ...
 - Verification: ...
 - Risks/blockers: ...
+- Context loaded: Project Brain, parent issue, blockers/handoffs, linked PRs
 ```
 
 Completion comment:
@@ -78,4 +108,11 @@ Done:
 - Verification: ...
 - PR: ...
 - Remaining risks: ...
+
+## HANDOFF FOR NEXT TASKS
+- Summary:
+- Changed files:
+- New / changed contracts:
+- Verification run:
+- Risks / follow-ups:
 ```

@@ -136,15 +136,26 @@ A task is "flow-ready" when the agent can plan, build, and verify it without gue
 
 **Anatomy of a good task** (matches a well-formed Linear issue):
 ```
-## Problem      — what & why, in 1-3 concrete sentences
-## Plan         — rough steps (optional; the agent refines after reading the code)
-## Done         — a checkable condition (the single most important part)
-## Verification — exact commands (e.g. npm test / npm run build / endpoint returns X)
+## Required Context Before Coding — Project Brain, parent issue, blockers, handoffs
+## Problem                        — what & why, in 1-3 concrete sentences
+## Goal                           — exact state this task must produce
+## Existing Code Context          — files/modules that matter
+## Depends On                     — previous tasks and expected contracts
+## Detailed Plan                  — concrete steps, files, and notes
+## Interfaces / Contracts         — what later tasks can rely on
+## Done                           — checkable acceptance criteria
+## Verification                   — exact commands (e.g. npm test / npm run build / endpoint returns X)
+## Out of Scope                   — explicit non-goals
 ```
 Plus three qualities:
 - **Done is testable** — not "X works" but "`npm test` passes / endpoint returns Y". No checkable Done = the loop has no stop condition.
 - **Scoped** — one task = one goal; say what NOT to touch.
 - **Independent** — tasks that touch the same files can't run as parallel worktrees. Split by file/module so they can.
+
+For multi-task features, the parent Linear issue carries the **Feature Context Packet**
+(goal, current system, target architecture, shared decisions, cross-task contracts, task map,
+feature-level verification). Each completed sub-task should leave a `HANDOFF FOR NEXT TASKS`
+comment so fresh agents can understand previous work without chat history.
 
 **Match the size to the form:**
 | Size | Where | Form |

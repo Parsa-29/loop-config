@@ -32,20 +32,83 @@ Run as `/plantask <idea>` (a feature, a bug, or any piece of work). One run = ON
 
 ### 2. Decompose
 - Break the feature into **3-7 tasks** (fewer is better). Each task is one bounded, separately-verifiable unit.
-- For EACH task, write the project's task template:
-  - **Required Project Context** — instruct the executor to read the repo-native Project Brain before coding:
-    - `docs/ai/project-brain.md`
-    - `docs/ai/project-passport.md`
-    - `docs/ai/code-map.md`
-    - `docs/ai/conventions.md`
-    - `docs/ai/gotchas.md`
-    If `docs/ai/project-brain.md` is missing and the task is broad/ambiguous, the executor should use the `project-brain` skill to bootstrap it before implementation. If expanded files are missing, continue with the one-file brain and direct code inspection.
-  - **Problem** — what & why (concrete)
-  - **Plan** — the steps for that task
-  - **Done** — a checkable condition
-  - **Verification** — exact commands (build/test/lint, from the project's CLAUDE.md/AGENTS.md)
+- Write a **Feature Context Packet** for the parent issue:
+  - **Goal** — the full feature/user outcome in one paragraph.
+  - **Why now** — concrete problem or product reason.
+  - **Current system** — relevant files/modules and how they behave today.
+  - **Target architecture** — what should be true after all sub-tasks are complete.
+  - **Shared decisions** — constraints and design choices every task must preserve.
+  - **Cross-task contracts** — what one task creates/changes that later tasks consume.
+  - **Task map** — ordered list of sub-tasks, dependencies, parallel-safety, branch names.
+  - **Feature-level verification** — final commands/manual checks that prove the whole feature works.
+- For EACH task, write the comprehensive executor template below. A fresh agent must be able to work from the task without chat history.
+
+```md
+## Required Context Before Coding
+
+1. Read repo Project Brain:
+   - `docs/ai/project-brain.md`
+   - `docs/ai/project-passport.md` if present
+   - `docs/ai/code-map.md` if present
+   - `docs/ai/conventions.md` if present
+   - `docs/ai/gotchas.md` if present
+2. Read parent issue: <parent identifier/title>.
+3. Read blocker/dependency issues listed below.
+4. Read the latest `HANDOFF FOR NEXT TASKS` comments and linked PRs from completed blockers.
+5. If required context is missing or contradicts code, stop and comment before guessing.
+
+## Problem
+
+Concrete task-specific problem and why it matters.
+
+## Goal
+
+The exact state this task must produce.
+
+## Existing Code Context
+
+- `path/file.ext`: what matters here today
+- `path/file.ext`: what matters here today
+
+## Depends On
+
+- `<issue-id>`: expected output/contract from that task
+- None, if independent.
+
+## Detailed Plan
+
+1. Step name
+   - Files:
+   - Change:
+   - Notes:
+2. Step name
+   - Files:
+   - Change:
+   - Notes:
+
+## Interfaces / Contracts
+
+- New/changed function, component, endpoint, schema, event, or behavior that later tasks rely on.
+
+## Done
+
+- Checkable acceptance criterion.
+- Checkable acceptance criterion.
+
+## Verification
+
+- Command: `<exact command>`
+  Expected: `<expected result>`
+- Manual/runtime check, if needed:
+
+## Out of Scope
+
+- Explicit non-goal.
+```
+
 - Decide **ordering & dependencies**: which task must finish before another (blocks / blocked-by). Number them `[slug N/M]`.
 - Flag **independence**: mark which tasks touch disjoint files (parallel-safe) vs which touch shared files (must be sequential). Two parallel-safe tasks must NOT edit the same file.
+- Add a final **Integration Verification** task whenever the feature has coupled tasks or cross-task contracts. This final task should read all handoffs, run feature-level verification, fix integration mismatches, and update docs/memory if needed.
 - Choose **labels** for each task, reusing existing Linear labels where possible:
   - a **type** label (feature / bug / improvement),
   - an **area** label (the module/domain),
@@ -57,16 +120,19 @@ Run as `/plantask <idea>` (a feature, a bug, or any piece of work). One run = ON
 ### 3. Present the plan — STOP for approval
 Show the user the complete plan BEFORE writing anything to Linear:
 - target team/project, feature slug, parent-issue title;
-- the ordered task list with: number, title, one-line goal, Done, labels, deps (what blocks what), independence flag, branch name;
+- Feature Context Packet summary: goal, target architecture, shared decisions, cross-task contracts, feature-level verification;
+- the ordered task list with: number, title, one-line goal, key files/modules, Done, labels, deps (what blocks what), independence flag, branch name;
 - Project Brain status: existing / bootstrapped draft / missing because read-only or docs-disabled;
+- whether a final Integration Verification task is included, and why;
 - any new labels you'll create.
 **Wait for explicit approval.** State clearly that approving authorizes BOTH creating the issues AND dispatching them to the executor (Cyrus) so coding starts automatically — the user is approving execution, not just issue creation. Creating Linear issues + triggering an autonomous agent are external mutations — do not proceed until the user says go. If they want **plan-only** (create issues but NOT auto-execute), honor that and skip step 5's dispatch. If they adjust scope, revise and re-show.
 
 ### 4. Create in Linear (only after approval)
 - **Idempotency check first**: if issues with this `feat:<slug>` label already exist, do NOT duplicate — report what exists and ask whether to add/update instead.
-- Create the **parent issue** (the feature) in the chosen project: title = feature name, description = overview + the task list + acceptance for the feature as a whole.
-- Create each **task as a sub-issue** of that parent (`parentId`), in the same project, with: full task-template description, labels, status `Backlog`/`Todo`.
+- Create the **parent issue** (the feature) in the chosen project with the full **Feature Context Packet**. This parent is the shared context source for all sub-tasks, not a placeholder.
+- Create each **task as a sub-issue** of that parent (`parentId`), in the same project, with the full comprehensive executor template, labels, status `Backlog`/`Todo`.
 - Set **dependencies** with the native `blockedBy` / `blocks` params on `save_issue` (confirmed supported) — e.g. the test task `blockedBy: [task1, task2]`. These are real Linear relations, not description text — don't duplicate them as a `Blocked by:` line in the description.
+- Also include semantic dependency context in each blocked task's **Depends On** section: what the blocker must deliver and what contract this task should consume. Linear metadata says "wait"; the task description says "what to read and rely on."
 - **Branch / PR linking — each sub-PR closes its OWN sub-issue, never the parent.** The executor's auto-generated branch (`cyrus/adm-NN-...`) already links the PR to *that* sub-issue and moves it to Done on merge (verified — Linear's GitHub integration does this by branch name). So each task's PR should reference its own issue, e.g. `Closes ADM-NN` for that task. **Do NOT put `Closes <parent-id>` in a sub-task PR** — that closes the whole feature parent on the first merge. Let the parent close when all sub-issues are Done (enable Linear's "complete parent when all sub-issues complete"), or have ONLY the final task's PR add `Closes <parent-id>`. Feature isolation comes from `parentId` + the `feat:<slug>` label, not the branch prefix.
 - Keep titles prefixed `[slug N/M]` so order is obvious everywhere.
 
@@ -97,6 +163,29 @@ The executor (Cyrus) only acts on repos registered in its config, and uses that 
   - **Plan-only mode:** if the user chose plan-only in step 3, SKIP dispatch — leave issues in Backlog, unassigned.
 - **Report** the created parent + sub-issues with links, the order, the parallel-safe set, and confirm they've been dispatched to Cyrus (or left in Backlog if plan-only).
 - Progress convention: the executor `save_comment`s on each task as it works. The PR auto-links to that task's own sub-issue via the `cyrus/adm-NN-...` branch and moves it to Done on merge (no magic-word needed for the sub-issue; if you add one, use the task's OWN id, never the parent's — see step 4). The human gate is the PR review/merge.
+- Completion convention: every executor must post a final `HANDOFF FOR NEXT TASKS` comment before moving the task to review/done:
+  ```md
+  ## HANDOFF FOR NEXT TASKS
+
+  ### Summary
+  What changed and why.
+
+  ### Changed Files
+  - `path/file.ext`: what changed
+
+  ### New / Changed Contracts
+  - Function/component/API/schema/behavior later tasks should rely on.
+
+  ### Verification Run
+  - Command: ...
+  - Result: ...
+
+  ### PR
+  <link>
+
+  ### Risks / Follow-ups
+  Anything the next task must know.
+  ```
 
 ## Multiple features
 Run `/plantask` once per feature. Each run creates its own parent issue + `feat:<slug>`. NEVER place two different features' tasks under one parent or share a slug. Three features on one project = three parents, three slugs, three branch namespaces — zero mixing.
