@@ -100,6 +100,25 @@ file (`CLAUDE.md` for Claude Code, `AGENTS.md` for the rest — symlink them to 
 with just that project's **verify gate** (build/test/lint) and **risk tiers** (what needs
 approval). Keep it under ~100 lines.
 
+### Project Brain (repo-native memory)
+For multi-task agent work, add a small project memory folder that every fresh agent can
+read before planning or coding:
+```bash
+mkdir -p <repo>/docs/ai
+cp -R ~/loop-config/templates/project-brain/. <repo>/docs/ai/
+```
+
+Keep this concise and maintained with the code:
+- `docs/ai/project-passport.md` — what the project is, key flows, architecture, critical rules, verify gate
+- `docs/ai/code-map.md` — where important code lives and how data flows
+- `docs/ai/conventions.md` — project-specific implementation/testing patterns
+- `docs/ai/gotchas.md` — traps, dangerous operations, env requirements, fragile areas
+- `docs/ai/decisions/` — short decision records for non-obvious architecture choices
+
+This is the baseline memory. Linear issues hold task context; handoff comments hold
+task-to-task context; optional Obsidian/MCP memory can index or mirror these files, but
+agents should not depend on external memory being available.
+
 ## Planning tasks (so the flow runs smoothly)
 
 A task is "flow-ready" when the agent can plan, build, and verify it without guessing.

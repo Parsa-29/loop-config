@@ -21,16 +21,30 @@ Use this skill when the user:
    - Read the issue or project before inspecting code when the task starts from Linear.
    - Treat title, description, comments, labels, status, linked PRs, assignee, priority, cycle, and project as task context.
 
-2. Plan before non-trivial work.
+2. Load repo-native project memory.
+   - If present, read these files before planning implementation:
+     - `docs/ai/project-passport.md`
+     - `docs/ai/code-map.md`
+     - `docs/ai/conventions.md`
+     - `docs/ai/gotchas.md`
+   - Treat these files as baseline project memory: architecture, conventions, critical rules, gotchas, and verification gates.
+   - If they are missing, say so in the plan/progress comment and continue by inspecting code directly.
+
+3. Load feature and dependency context.
+   - If the issue has a parent, read the parent issue for feature-level context.
+   - If the issue is blocked by other issues or depends on previous work, read those issues, their latest completion/handoff comments, and linked PRs when available.
+   - Do not assume a fresh agent session remembers earlier tasks.
+
+4. Plan before non-trivial work.
    - For multi-file, risky, or ambiguous changes, post a short implementation plan as a Linear comment.
    - Include intended files/modules, verification commands, risks, and blockers.
 
-3. Keep status aligned.
+5. Keep status aligned.
    - Move to `In Progress` when implementation starts.
    - Move to `In Review` when a PR exists or the diff is review-ready.
    - Move to `Blocked` when credentials, approvals, CI, environment, or product decisions are missing.
 
-4. Report completion in Linear.
+6. Report completion in Linear.
    - Comment with summary, changed files, verification output, unresolved risks, and PR link if available.
    - Do not mark complete unless the requested done condition is satisfied.
 
