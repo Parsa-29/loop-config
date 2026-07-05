@@ -101,14 +101,25 @@ with just that project's **verify gate** (build/test/lint) and **risk tiers** (w
 approval). Keep it under ~100 lines.
 
 ### Project Brain (repo-native memory)
-For multi-task agent work, add a small project memory folder that every fresh agent can
+For multi-task agent work, keep a small project memory file that every fresh agent can
 read before planning or coding:
+```text
+docs/ai/project-brain.md
+```
+
+Agents should auto-bootstrap this file from repository inspection when it is missing for
+`/plantask` or other broad/ambiguous work. The generated file must stay evidence-based and
+start as a draft: code is the source of truth, unknowns stay marked as unknown, and secrets
+never go in memory.
+
+For mature projects, expand the one-file brain into the structured templates:
 ```bash
 mkdir -p <repo>/docs/ai
 cp -R ~/loop-config/templates/project-brain/. <repo>/docs/ai/
 ```
 
-Keep this concise and maintained with the code:
+Keep all Project Brain files concise and maintained with the code:
+- `docs/ai/project-brain.md` — fast baseline memory for agents
 - `docs/ai/project-passport.md` — what the project is, key flows, architecture, critical rules, verify gate
 - `docs/ai/code-map.md` — where important code lives and how data flows
 - `docs/ai/conventions.md` — project-specific implementation/testing patterns

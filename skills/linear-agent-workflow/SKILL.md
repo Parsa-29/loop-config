@@ -23,12 +23,15 @@ Use this skill when the user:
 
 2. Load repo-native project memory.
    - If present, read these files before planning implementation:
+     - `docs/ai/project-brain.md`
      - `docs/ai/project-passport.md`
      - `docs/ai/code-map.md`
      - `docs/ai/conventions.md`
      - `docs/ai/gotchas.md`
    - Treat these files as baseline project memory: architecture, conventions, critical rules, gotchas, and verification gates.
-   - If they are missing, say so in the plan/progress comment and continue by inspecting code directly.
+   - If `docs/ai/project-brain.md` is missing and the task is broad, ambiguous, or multi-module, use the `project-brain` skill to bootstrap a draft from high-confidence repo evidence before implementation.
+   - For tiny obvious fixes, you may skip bootstrap; say Project Brain is missing and continue by inspecting code directly.
+   - If expanded files are missing, continue with `docs/ai/project-brain.md` and direct code inspection.
 
 3. Load feature and dependency context.
    - If the issue has a parent, read the parent issue for feature-level context.

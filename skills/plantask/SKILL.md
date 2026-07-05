@@ -22,9 +22,10 @@ Run as `/plantask <idea>` (a feature, a bug, or any piece of work). One run = ON
 
 ### 1. Observe (no writes yet)
 - **Read the codebase** relevant to the idea (the modules/files it will touch). Plan against reality, not assumptions. If the idea is vague, ask 1-2 clarifying questions before decomposing (don't guess).
-- **Check Project Brain**: look for `docs/ai/project-passport.md`, `docs/ai/code-map.md`, `docs/ai/conventions.md`, and `docs/ai/gotchas.md`.
-  - If present, read them before decomposing tasks.
-  - If missing, include a plan warning: `Project Brain missing; recommend creating docs/ai baseline before dispatching multi-task work.` Do not invent project memory from scratch inside Linear.
+- **Load or bootstrap Project Brain**:
+  - Prefer the fast baseline `docs/ai/project-brain.md`; also read expanded files if present: `docs/ai/project-passport.md`, `docs/ai/code-map.md`, `docs/ai/conventions.md`, and `docs/ai/gotchas.md`.
+  - If no Project Brain exists, use the `project-brain` skill to auto-create `docs/ai/project-brain.md` from high-confidence repo evidence before decomposing tasks. Mark it as a draft and leave unknowns as unknown.
+  - If the environment is read-only or the user explicitly said not to touch docs, do not create files; include a plan warning that Project Brain is missing and planning is based on direct code inspection.
 - **Read Linear**: `list_teams`, `list_projects`, `list_issue_labels`, `list_issue_statuses` for the target team.
 - **Pick the target project**: infer from the repo (git remote / folder name matching a Linear project). If it's ambiguous or nothing matches, **ask the user which team/project** — never guess the destination.
 - Derive a short **feature slug** from the idea (kebab-case, e.g. `checkout-revamp`).
@@ -33,11 +34,12 @@ Run as `/plantask <idea>` (a feature, a bug, or any piece of work). One run = ON
 - Break the feature into **3-7 tasks** (fewer is better). Each task is one bounded, separately-verifiable unit.
 - For EACH task, write the project's task template:
   - **Required Project Context** — instruct the executor to read the repo-native Project Brain before coding:
+    - `docs/ai/project-brain.md`
     - `docs/ai/project-passport.md`
     - `docs/ai/code-map.md`
     - `docs/ai/conventions.md`
     - `docs/ai/gotchas.md`
-    If any are missing, the executor should continue by inspecting code but mention the missing Project Brain in its plan/progress comment.
+    If `docs/ai/project-brain.md` is missing and the task is broad/ambiguous, the executor should use the `project-brain` skill to bootstrap it before implementation. If expanded files are missing, continue with the one-file brain and direct code inspection.
   - **Problem** — what & why (concrete)
   - **Plan** — the steps for that task
   - **Done** — a checkable condition
@@ -56,7 +58,7 @@ Run as `/plantask <idea>` (a feature, a bug, or any piece of work). One run = ON
 Show the user the complete plan BEFORE writing anything to Linear:
 - target team/project, feature slug, parent-issue title;
 - the ordered task list with: number, title, one-line goal, Done, labels, deps (what blocks what), independence flag, branch name;
-- Project Brain status: present/missing, and if missing, the recommendation to create `docs/ai` before dispatching multi-task work;
+- Project Brain status: existing / bootstrapped draft / missing because read-only or docs-disabled;
 - any new labels you'll create.
 **Wait for explicit approval.** State clearly that approving authorizes BOTH creating the issues AND dispatching them to the executor (Cyrus) so coding starts automatically — the user is approving execution, not just issue creation. Creating Linear issues + triggering an autonomous agent are external mutations — do not proceed until the user says go. If they want **plan-only** (create issues but NOT auto-execute), honor that and skip step 5's dispatch. If they adjust scope, revise and re-show.
 
