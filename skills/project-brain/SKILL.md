@@ -27,7 +27,7 @@ large or the project needs more structure.
 ## When to bootstrap automatically
 
 If `docs/ai/project-brain.md` is missing, bootstrap it before planning when:
-- the user runs `/plantask`;
+- the user runs `/plantask` (mandatory unless the environment is read-only or the user explicitly said not to touch docs);
 - the work will create multiple Linear tasks;
 - the task spans multiple modules or frontend/backend/data boundaries;
 - the task is ambiguous and project orientation affects the plan;
@@ -41,6 +41,8 @@ Do not auto-bootstrap for:
 - repos where writes are unavailable.
 
 If you skip bootstrap, mention briefly that Project Brain is missing and why you skipped it.
+For `/plantask`, skipping bootstrap means the run must stay plan-only until the user explicitly
+approves creating Linear issues without repo-native memory.
 
 ## How to bootstrap
 

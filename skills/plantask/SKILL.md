@@ -24,8 +24,8 @@ Run as `/plantask <idea>` (a feature, a bug, or any piece of work). One run = ON
 - **Read the codebase** relevant to the idea (the modules/files it will touch). Plan against reality, not assumptions. If the idea is vague, ask 1-2 clarifying questions before decomposing (don't guess).
 - **Load or bootstrap Project Brain**:
   - Prefer the fast baseline `docs/ai/project-brain.md`; also read expanded files if present: `docs/ai/project-passport.md`, `docs/ai/code-map.md`, `docs/ai/conventions.md`, and `docs/ai/gotchas.md`.
-  - If no Project Brain exists, use the `project-brain` skill to auto-create `docs/ai/project-brain.md` from high-confidence repo evidence before decomposing tasks. Mark it as a draft and leave unknowns as unknown.
-  - If the environment is read-only or the user explicitly said not to touch docs, do not create files; include a plan warning that Project Brain is missing and planning is based on direct code inspection.
+  - If no Project Brain exists, this is a `/plantask` precondition: use the `project-brain` skill to auto-create `docs/ai/project-brain.md` from high-confidence repo evidence before decomposing tasks. Mark it as a draft and leave unknowns as unknown.
+  - Do NOT continue to Linear issue creation with a generic "Project Brain missing" warning. Only skip bootstrap when the environment is read-only or the user explicitly said not to touch docs; in that case, state the exact reason and keep the run plan-only unless the user explicitly approves creating issues without Project Brain.
 - **Read Linear**: `list_teams`, `list_projects`, `list_issue_labels`, `list_issue_statuses` for the target team.
 - **Pick the target project**: infer from the repo (git remote / folder name matching a Linear project). If it's ambiguous or nothing matches, **ask the user which team/project** — never guess the destination.
 - Derive a short **feature slug** from the idea (kebab-case, e.g. `checkout-revamp`).
@@ -122,7 +122,7 @@ Show the user the complete plan BEFORE writing anything to Linear:
 - target team/project, feature slug, parent-issue title;
 - Feature Context Packet summary: goal, target architecture, shared decisions, cross-task contracts, feature-level verification;
 - the ordered task list with: number, title, one-line goal, key files/modules, Done, labels, deps (what blocks what), independence flag, branch name;
-- Project Brain status: existing / bootstrapped draft / missing because read-only or docs-disabled;
+- Project Brain status: existing / bootstrapped draft / skipped with exact reason. If skipped, ask whether to proceed without repo-native memory before creating Linear issues.
 - whether a final Integration Verification task is included, and why;
 - any new labels you'll create.
 **Wait for explicit approval.** State clearly that approving authorizes BOTH creating the issues AND dispatching them to the executor (Cyrus) so coding starts automatically — the user is approving execution, not just issue creation. Creating Linear issues + triggering an autonomous agent are external mutations — do not proceed until the user says go. If they want **plan-only** (create issues but NOT auto-execute), honor that and skip step 5's dispatch. If they adjust scope, revise and re-show.
