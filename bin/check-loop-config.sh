@@ -61,6 +61,24 @@ else
   fail "claude/settings.ask.json does not parse"
 fi
 
+if python3 -m json.tool "$ROOT/claude/settings.hooks.json" >/dev/null; then
+  ok "claude/settings.hooks.json parses"
+else
+  fail "claude/settings.hooks.json does not parse"
+fi
+
+if python3 "$ROOT/hooks/test_safety_guard.py" >/dev/null 2>&1; then
+  ok "hooks/safety_guard.py tests pass"
+else
+  fail "hooks/safety_guard.py tests fail (run: python3 $ROOT/hooks/test_safety_guard.py)"
+fi
+
+if [ -f "$HOME/.claude/settings.json" ] && grep -q "loop-config/hooks/safety_guard.py" "$HOME/.claude/settings.json"; then
+  ok "safety guard is wired into ~/.claude/settings.json"
+else
+  warn "safety guard is not wired into ~/.claude/settings.json (README: Safety hooks)"
+fi
+
 if python3 - "$ROOT/codex/config.gate.toml" <<'PY'
 import sys, tomllib
 with open(sys.argv[1], "rb") as f:

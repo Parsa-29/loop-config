@@ -33,6 +33,41 @@ node -e '
 '
 ```
 
+#### Safety hooks (Claude Code)
+`hooks/safety_guard.py` is a PreToolUse hook: instructions advise, hooks enforce. It checks
+every Bash, Read, Edit and Write call before it runs.
+
+| Decision | What |
+|---|---|
+| deny | `rm -rf` on broad paths (`/`, `~`, home folders, a repo root) · force-push or delete of `main`/`master` · direct prod DB access (`DATABASE_PUBLIC_URL`, `*.rlwy.net`, `scripts/prod-migrate.sh`) · `curl … \| sh` |
+| ask | `railway run/connect/shell` · `prisma migrate reset`, `db push --force-reset`, `DROP`/`TRUNCATE` · printing or sending a secret (`cat .env`, value-printing `grep`, `git add .env`, `railway variables`, Read of `.env` or a private key) · edits to the guard or to `.claude/settings*.json` |
+
+Safe secret handling stays silent: `cp`/`ln` of `.env` into worktrees, `node --env-file`,
+names-only listings (`grep -c`, `grep -o '^[A-Z_]+='`, `sed 's/=.*//'`). Heredocs written to a
+file are data; heredocs fed to an interpreter (`python3 -`, `bash`, `psql`) are checked.
+It is a guardrail, not a sandbox: an oddly spelled command can slip past it. If the script
+crashes it allows the action with a visible warning, so it never freezes a session.
+Decisions go to `~/.claude/logs/safety-guard.log` (rule, tool and folder only, never the
+command text).
+
+Install (merges `claude/settings.hooks.json` into your settings, keeps existing hooks):
+```bash
+node -e '
+  const fs=require("fs"), os=require("os"), path=require("path");
+  const p=path.join(os.homedir(),".claude","settings.json");
+  const add=JSON.parse(fs.readFileSync(path.join(os.homedir(),"loop-config","claude","settings.hooks.json"),"utf8")).hooks.PreToolUse;
+  let s={}; try{ s=JSON.parse(fs.readFileSync(p,"utf8")); }catch{}
+  s.hooks=s.hooks||{}; s.hooks.PreToolUse=s.hooks.PreToolUse||[];
+  const has=JSON.stringify(s.hooks.PreToolUse).includes("loop-config/hooks/safety_guard.py");
+  if(!has) s.hooks.PreToolUse.push(...add);
+  fs.writeFileSync(p, JSON.stringify(s,null,2)+"\n");
+  console.log(has?"already installed":"installed safety guard");
+'
+```
+Test: `python3 ~/loop-config/hooks/test_safety_guard.py` (also run by `check-loop-config.sh`).
+Turn it off: remove the entry from `hooks.PreToolUse` in `~/.claude/settings.json`.
+A new rule starts with a failing test case; tune it against real transcripts before adding it.
+
 ### Codex
 Reads `AGENTS.md` natively.
 ```bash
